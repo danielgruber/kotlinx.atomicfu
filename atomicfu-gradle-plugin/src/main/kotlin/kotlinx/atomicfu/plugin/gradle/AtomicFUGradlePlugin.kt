@@ -15,6 +15,9 @@ import org.gradle.api.tasks.testing.*
 import org.gradle.jvm.tasks.*
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
+import org.jetbrains.kotlin.gradle.targets.js.KotlinJsTarget
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
+
 import java.io.*
 import java.util.*
 import java.util.concurrent.*
@@ -157,6 +160,14 @@ fun Project.configureMultiplatformPluginTasks() {
     val originalDirsByCompilation = hashMapOf<KotlinCompilation<*>, FileCollection>()
     val config = config
     withKotlinTargets { target ->
+        if ((target is KotlinJsTarget && target.irTarget != null) || target is KotlinJsIrTarget) {
+            val irTarget = if (target is KotlinJsTarget) target.irTarget!! else target
+                irTarget.compilations.all {
+                    it.dependencies {
+                        compileOnly("org.jetbrains.kotlinx:atomicfu-js:0.14.3-1.4-M2-eap-83-1")
+                    }
+                }
+        }
         if (target.platformType == KotlinPlatformType.common || target.platformType == KotlinPlatformType.native) {
             return@withKotlinTargets // skip the common & native targets -- no transformation for them
         }
